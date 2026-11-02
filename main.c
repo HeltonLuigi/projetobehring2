@@ -2,6 +2,7 @@
 #include <string.h>
 int op = 0;
 FILE *p;
+FILE *t;
 char item[51];
 int q;
 int exe(void);
@@ -47,6 +48,119 @@ int list(){
         fclose(p);
     }
 }
+int remover(void){
+    char i[51];
+    int r;
+    int f = 0;
+    int a = 0;
+
+    p = fopen("inventory.txt", "r");
+
+    if(p == NULL){
+        printf("Item não encontrado.\n");
+        return 0;
+    }else{
+        printf("Digite o nome do item: ");
+        scanf("%50s", i);
+
+        printf("Digite a quantidade a ser removida: ");
+        if(scanf("%d", &r) != 1 || r <= 0){
+            printf("Quantidade inválida.\n");
+            fclose(p);
+            return 0;
+        }
+        while(fscanf(p, "%49s %d", item, &q) == 2){
+            if(strcmp(i, item) == 0){
+                f = 1;
+
+                if(q < r){
+                    printf("Estoque insuficiente. Quantidade disponível: %d\n", q);
+                    fclose(p);
+                    return 0;
+                }
+
+                break;
+            }
+        }
+        if(f == 0){
+            printf("Item não encontrado.\n");
+            fclose(p);
+            return 0;
+        }
+        rewind(p);
+        t = fopen("temp.txt", "w");
+        if(t == NULL){
+            printf("Erro ao criar arquivo temporário.\n");
+            fclose(p);
+            return 0;
+        }else{
+
+            while(fscanf(p, "%49s %d", item, &q) == 2){
+
+                if(strcmp(i, item) == 0 && a == 0){
+                    a = 1;
+
+                    if(q > r){
+                        q = q - r;
+                        fprintf(t, "%s\n%d\n", item, q);
+                    }
+                    else if(q == r){
+                        // Não grava o produto
+                    }
+                }else{
+                    fprintf(t, "%s\n%d\n", item, q);
+                }
+            }
+        }
+
+        fclose(p);
+
+        if(fclose(t) != 0){
+            printf("Erro ao salvar o arquivo temporário.\n");
+            remove("temp.txt");
+            return 0;
+        }
+        if(rename("inventory.txt", "inventory_backup.txt") != 0){
+            printf("Erro ao preparar a atualização.\n");
+            remove("temp.txt");
+            return 0;
+        }
+
+        if(rename("temp.txt", "inventory.txt") != 0){
+            printf("Erro ao atualizar estoque.\n");
+
+            if(rename("inventory_backup.txt", "inventory.txt") != 0){
+                printf("Verifique o arquivo inventory_backup.txt.\n");
+            }
+
+            return 0;
+        }
+        remove("inventory_backup.txt");
+
+        if(q >= 0){
+        }
+        p = fopen("inventory.txt", "r");
+        f = 0;
+
+        if(p != NULL){
+            while(fscanf(p, "%49s %d", item, &q) == 2){
+                if(strcmp(i, item) == 0){
+                    f = 1;
+                    break;
+                }
+            }
+            fclose(p);
+        }
+
+        if(f == 0){
+            printf("Item removido do estoque!\n");
+        }else{
+            printf("Quantidade atualizada com sucesso!\n");
+        }
+    }
+    return 1;
+}
+
 int criar(){
     p = fopen("inventory.txt", "a");
     if(p == NULL){
@@ -55,7 +169,6 @@ int criar(){
         fclose(p);
     }
 }
-
 int main(void) {
     char linha[100];
     char extra;
@@ -95,6 +208,7 @@ int exe(void){
         end();
     }
     else if(op == 2){
+        remover();
         end();
     }
     else if(op == 3){
